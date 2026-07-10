@@ -48,3 +48,4 @@ $_SESSION['cart'] = $cart;
 
 flash('success', $product['name'] . ' added to cart.');
 redirect('features/order-management/cart.php');
+// making changes for testing the jira.
