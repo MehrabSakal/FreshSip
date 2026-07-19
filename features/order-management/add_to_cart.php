@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 csrf_check();
 
 $productId = (int) ($_POST['product_id'] ?? 0);
-$quantity  = max(1, (int) ($_POST['quantity'] ?? 1));
+$quantity  = min(99, max(1, (int) ($_POST['quantity'] ?? 1)));
 
 $stmt = $pdo->prepare('SELECT * FROM products WHERE id = ? AND is_available = 1');
 $stmt->execute([$productId]);
@@ -22,11 +22,11 @@ if (!$product) {
     redirect('index.php');
 }
 
-// Collect allowed customizations.
-$allowed = ['No Sugar', 'Extra Ice', 'Add Protein', 'Less Ice', 'Extra Sweet'];
-$chosen  = array_values(array_intersect($allowed, $_POST['customizations'] ?? []));
+// Collect supported, conflict-free customizations from the shared catalog.
+$chosen  = normalize_customizations($_POST['customizations'] ?? []);
 $custKey = implode('|', $chosen);
-$custStr = $chosen ? implode(', ', $chosen) : '';
+$custStr = customizations_to_string($chosen);
+$unitPrice = round((float) $product['price'] + customization_surcharge($chosen), 2);
 
 // Line key: same product + same customizations stacks together.
 $key = $productId . ':' . md5($custKey);
@@ -38,14 +38,19 @@ if (isset($cart[$key])) {
     $cart[$key] = [
         'product_id'     => $productId,
         'name'           => $product['name'],
-        'price'          => (float) $product['price'],
+        'price'          => $unitPrice,
         'icon'           => $product['icon'],
         'quantity'       => $quantity,
         'customizations' => $custStr,
     ];
 }
+
+if ($stockError = cart_stock_error($pdo, $cart)) {
+    flash('error', $stockError);
+    redirect('index.php');
+}
+
 $_SESSION['cart'] = $cart;
 
 flash('success', $product['name'] . ' added to cart.');
 redirect('features/order-management/cart.php');
-// making changes for testing the jira.

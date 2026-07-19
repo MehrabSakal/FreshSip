@@ -33,12 +33,12 @@ require_once APP_ROOT . '/includes/header.php';
             <thead class="table-light">
                 <tr>
                     <th>#</th><th>Name</th><th>Category</th><th>Price</th>
-                    <th>Available</th><th class="text-end">Actions</th>
+                    <th>Visibility</th><th>Stock</th><th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
             <?php if (!$products): ?>
-                <tr><td colspan="6" class="text-center text-muted py-4">No products yet.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-4">No products yet.</td></tr>
             <?php endif; ?>
             <?php foreach ($products as $p): ?>
                 <tr>
@@ -55,6 +55,13 @@ require_once APP_ROOT . '/includes/header.php';
                             <span class="badge bg-success">Yes</span>
                         <?php else: ?>
                             <span class="badge bg-secondary">Hidden</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if (product_has_stock($pdo, (int) $p['id'])): ?>
+                            <span class="badge bg-success">In stock</span>
+                        <?php else: ?>
+                            <span class="badge bg-danger">Sold out</span>
                         <?php endif; ?>
                     </td>
                     <td class="text-end">
